@@ -51,10 +51,6 @@ async function main() {
 
   tcpEgressOverHTTP.on("data", (chunk) => {
     console.log("tcpEgressOverHTTP recieved:", chunk.toString());
-    // if (chunk.toString().trim().length === 0) {
-    //   console.log("whitespace only.. ignoring..");
-    //   return;
-    // }
 
     if (!tcpClient) {
       createTCPClient();
