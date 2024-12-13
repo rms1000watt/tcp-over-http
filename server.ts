@@ -17,30 +17,26 @@ async function main() {
 
 function createExpressServer() {
   app.post('/tcp/egress', async (req: Request, res: Response) => {
-    console.log(`tcp/egress connected.. keepalive:${res.shouldKeepAlive}`);
-    res.setHeader("Connection", "keep-alive");
-    res.flushHeaders();
-    tcpEgressOverHTTP = res;
+    console.log(`tcp/egress connected`);
 
-    const wait = new Promise((resolve) => {setTimeout(() => {resolve(true)}, waitTimeout)});
+    tcpEgressOverHTTP = res;
+    tcpEgressOverHTTP.flushHeaders();
+
+    console.log('tcp/egress waiting');
+    await new Promise((resolve) => {setTimeout(() => {resolve(true)}, waitTimeout)});
     // hold connection open for a minute
     // do stuff...
 
-    console.log('tcp/egress waiting');
-    await wait
     tcpEgressOverHTTP = undefined;
     console.log('tcp/egress done');
     res.send();
   });
 
   app.post('/tcp/ingress', async (req: Request, res: Response) => {
-    console.log(`tcp/ingress connected.. keepalive:${res.shouldKeepAlive}`);
-    res.setHeader("Connection", "keep-alive");
+    console.log(`tcp/ingress connected..`);
     res.flushHeaders();
-    const wait = new Promise((resolve) => {setTimeout(() => {resolve(true)}, waitTimeout)});
 
     tcpIngressOverHTTP = req.socket;
-
     tcpIngressOverHTTP.on("data", (chunk: Buffer) => {
       const out = undoTransferEncodingChunk(chunk);
 
@@ -62,7 +58,8 @@ function createExpressServer() {
     tcpIngressOverHTTP.on("error", (err) => console.log("tcpIngressOverHTTP error:" + JSON.stringify(err)));
 
     console.log('tcp/ingress waiting');
-    await wait
+    await new Promise((resolve) => {setTimeout(() => {resolve(true)}, waitTimeout)});
+
     tcpIngressOverHTTP = undefined;
     console.log('tcp/ingress done');
     res.send();
