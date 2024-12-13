@@ -16,7 +16,6 @@ async function main() {
       maxContentLength: Infinity,
     }),
 
-    // for some reason egress works fine without anything defined below
     axios.post("http://localhost:3000/tcp/egress", undefined, {
       responseType: 'stream',
       maxBodyLength: Infinity,
@@ -34,8 +33,6 @@ async function main() {
   + `Transfer-Encoding: chunked\r\n`
   + `\r\n`);
 
-  tcpIngressOverHTTP.setKeepAlive(true);
-
   tcpIngressOverHTTP.on("close", () => {
     console.log("tcpIngressOverHTTP closed");
     tcpIngressOverHTTP = undefined;
@@ -50,7 +47,6 @@ async function main() {
   })
 
   tcpEgressOverHTTP = tcpEgressRes.data as net.Socket;
-
   tcpEgressOverHTTP.on("data", (chunk) => {
     console.log("tcpEgressOverHTTP recieved:", chunk.toString());
 
