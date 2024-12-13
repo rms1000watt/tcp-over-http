@@ -25,10 +25,10 @@ npm i
 docker run -it --rm -p 22:9000 istio/tcp-echo-server
 
 # In terminal 2
-tsx server.ts
+tsx client.ts
 
 # In terminal 3
-tsx client.ts
+tsx server.ts
 
 # In terminal 4
 telnet localhost 8000
@@ -51,10 +51,10 @@ docker run -it --rm \
   linuxserver/openssh-server
 
 # In terminal 2
-tsx server.ts
+tsx client.ts
 
 # In terminal 3
-tsx client.ts
+tsx server.ts
 
 # In terminal 4
 ssh fish@localhost -p 8000

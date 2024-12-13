@@ -41,10 +41,17 @@ function createExpressServer() {
 
     tcpIngressOverHTTP = req.socket;
 
-    tcpIngressOverHTTP.on("data", (chunk) => {
-      console.log("tcpIngressOverHTTP receieved:", chunk.toString());
+    tcpIngressOverHTTP.on("data", (chunk: Buffer) => {
+      const out = undoTransferEncodingChunk(chunk);
+
+      // TODO: be smarter about this and omit all headers then start returning data
+      if (out.toString() === `Transfer-Encoding: chunked\r\n\r\n`){
+        return;
+      }
+
+      console.log("tcpIngressOverHTTP receieved:", out.toString());
       if (tcpClient) {
-        tcpClient.write(chunk);
+        tcpClient.write(out);
       } else {
         console.log("no tcpClient to write to..");
       }
@@ -99,6 +106,14 @@ function createTCPServer() {
   server.on('error', (err) => {
     console.error(`TCP Server error: ${err.message}`);
   });
+}
+
+function undoTransferEncodingChunk(chunk: Buffer) {
+  const newlineIndex = chunk.indexOf('\r\n');
+  if (newlineIndex !== -1) {
+    return chunk.subarray(newlineIndex + 2);
+  }
+  return chunk;
 }
 
 main().catch(console.error);

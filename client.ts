@@ -14,24 +14,26 @@ async function main() {
       responseType: 'stream',
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-      headers: {
-        'Content-Length': 999999,
-      }
     }),
 
+    // for some reason egress works fine without anything defined below
     axios.post("http://localhost:3000/tcp/egress", undefined, {
       responseType: 'stream',
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-      headers: {
-        'Content-Length': 999999,
-      }
     })
   ])
 
   console.log("connected to ingress and egress");
 
   tcpIngressOverHTTP = tcpIngressRes.data.socket as net.Socket;
+
+  // - Flush HTTP method/headers through the ingress side since the client pushes data to the server
+  // - The egress side never receives HTTP method/heads from the client because data flow is only one way server -> client
+  tcpIngressOverHTTP.write(`POST /tcp/ingress HTTP/1.1\r\n`
+  + `Transfer-Encoding: chunked\r\n`
+  + `\r\n`);
+
   tcpIngressOverHTTP.setKeepAlive(true);
 
   tcpIngressOverHTTP.on("close", () => {
@@ -74,11 +76,11 @@ function createTCPClient() {
     console.log(`Connected to localhost:22`);
   });
 
-  socket.on('data', (chunk) => {
+  socket.on('data', (chunk: Buffer) => {
     console.log(`tcpClient received: ${chunk.toString()}`);
 
     if (tcpIngressOverHTTP) {
-      tcpIngressOverHTTP.write(chunk, (err) => {
+      tcpIngressOverHTTP.write(transferEncodingChunk(chunk), (err) => {
         if (err) {
           console.log("tcpIngressOverHTTP error writing chunk:", JSON.stringify(err));
         }
@@ -102,6 +104,12 @@ function createTCPClient() {
     console.log('Client connection closed');
     tcpClient = undefined;
   });
+}
+
+function transferEncodingChunk(buffer: Buffer) {
+  const hexLength = (buffer.length - 2).toString(16);
+  const out = Buffer.concat([Buffer.from(`${hexLength}\r\n`),  buffer]);
+  return out;
 }
 
 main().catch(console.error);
